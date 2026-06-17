@@ -1,0 +1,11 @@
+Defect ID,Module,Description,Priority,Status
+UAT-SD-01,SD,End-user billing invoice reject,High,Open
+UAT-MM-01,MM,Goods receipt screen freeze,Medium,Closed
+UAT-FI-01,FI,Asset depreciation calculation error,High,Open
+UAT-PP-01,PP,User cannot release production order,Critical,Open
+UAT-QM-01,QM,Usage decision field uneditable,Low,Open
+UAT-SD-1006,SD,its not working properly,Low,Open
+UAT-SD-1007,SD,its not working properly,Low,Open
+UAT-SD-1008,SD,its not working properly,Low,Open
+UAT-SD-1009,SD,its not working properly,Low,Open
+UAT-SD-1010,SD,there is a problem,Low,Open
