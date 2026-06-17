@@ -10,13 +10,11 @@ st.set_page_config(
 )
 
 # --- HYBRID RE-ROUTE QUERY INTERCEPTOR ---
-# This immediately intercepts the browser's click on our HTML image anchor link
 query_params = st.query_params
 if "nav" in query_params and query_params["nav"] == "hub":
     if st.session_state.get("logged_in") and st.session_state.get("user_role") == "admin":
         st.session_state["app_view_state"] = "HUB_SCREEN"
         st.session_state["current_page"] = "Dashboard Metrics"
-    # Clear the parameter out so regular updates don't lock the view mode state
     st.query_params.clear()
 
 # 2. SEED PERSISTENT STATE DATA TABLES WITH DATA DISCOVERY SEEDS
@@ -67,13 +65,18 @@ scroll_dynamic_css = """
         overflow-y: auto !important; 
     }
 
-    .login-plain-wrapper {
-        max-width: 500px !important; 
-        margin: 4% auto !important;
-        background: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
+    .login-plain-container {
+        max-width: 460px !important; 
+        margin: 4% auto 0 auto !important;
         text-align: center;
+    }
+
+    /* Style the st.form transparently to remove any default border background boxes */
+    div[data-testid="stForm"] {
+        background-color: transparent !important;
+        border: none !important;
+        padding: 0 !important;
+        box-shadow: none !important;
     }
 
     .custom-input-label {
@@ -83,24 +86,6 @@ scroll_dynamic_css = """
         font-weight: 500 !important;
         margin-bottom: 6px !important;
         text-align: left;
-    }
-
-    .big-role-card {
-        padding: 24px !important;
-        border-radius: 16px !important;
-        margin-bottom: 8px !important;
-        text-align: left !important;
-    }
-    
-    .big-role-card.active {
-        background: linear-gradient(135deg, #E11B22 0%, #9B0F14 100%) !important;
-        border: 2px solid #FF4D52 !important;
-        box-shadow: 0 6px 25px rgba(225, 27, 34, 0.4) !important;
-    }
-    
-    .big-role-card.inactive {
-        background: rgba(255, 255, 255, 0.04) !important;
-        border: 2px solid rgba(255, 255, 255, 0.08) !important;
     }
 
     .hub-card {
@@ -141,7 +126,6 @@ scroll_dynamic_css = """
         box-shadow: 0 8px 20px rgba(157, 78, 221, 0.5) !important;
     }
     
-    /* CLICKABLE BRAND IMAGE CONTAINER HOOKS */
     .brand-link-wrapper {
         display: inline-block !important;
         transition: transform 0.2s ease !important;
@@ -167,17 +151,12 @@ st.markdown(scroll_dynamic_css, unsafe_allow_html=True)
 
 LOGO_PATH = "Colgate.svg.png"
 
-# FIXED: Native transparent link tag integration that drops all dynamic button wrappers
 def display_colgate_logo(centered=True):
-    # Dynamically point back to the app root context with our routing flag attached
     target_url = "/?nav=hub"
-    
-    # Render fallback plain text headers or real raster image depending on local project directories
     if os.path.exists(LOGO_PATH):
         if centered:
             col1, col2, col3 = st.columns([1.2, 1.6, 1.2])
             with col2:
-                # Use a standard markdown anchor tag with target="_self" to load within the exact same browser context
                 st.markdown(
                     f'<a href="{target_url}" target="_self" class="brand-link-wrapper">'
                     f'<img src="app/static/{LOGO_PATH}" style="width:100%; max-width:180px; display:block; margin:auto;">'
@@ -240,8 +219,6 @@ if "active_dataset_scope" not in st.session_state:
     st.session_state["active_dataset_scope"] = 1  
 if "current_page" not in st.session_state:
     st.session_state["current_page"] = "Dashboard Metrics"
-if "prelogin_role" not in st.session_state:
-    st.session_state["prelogin_role"] = "user" 
 
 def trigger_logout():
     st.session_state["logged_in"] = False
@@ -251,59 +228,37 @@ def trigger_logout():
     st.rerun()
 
 # ==========================================
-# PHASE A: LANDING SCREEN GATEWAY
+# PHASE A: LANDING SCREEN GATEWAY (PLAIN SCREEN & TOP LOGO)
 # ==========================================
 if not st.session_state["logged_in"]:
-    st.markdown('<div class="login-plain-wrapper">', unsafe_allow_html=True)
+    st.markdown('<div class="login-plain-container">', unsafe_allow_html=True)
     display_colgate_logo(centered=True)
-    st.markdown("<h2 style='text-align: center; margin: 10px 0 20px 0; font-size: 24px; font-weight: 600; color: #FFFFFF;'>User Login and Admin Login Portal</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align: center; margin: 20px 0 25px 0; font-size: 22px; font-weight: 600; color: #FFFFFF;'>SAP Testing Portal Gateway</h2>", unsafe_allow_html=True)
     
-    u_state = "active" if st.session_state["prelogin_role"] == "user" else "inactive"
-    st.markdown(f"""
-    <div class="big-role-card {u_state}">
-        <h4 style="margin:0; font-size:17px; color:#FFF; font-weight:600;">📋 Executive User Mode</h4>
-        <p style="margin:4px 0 0 0; font-size:12px; color:rgba(255,255,255,0.75);">Instant read-only access to primary integration tracking dashboards.</p>
-    </div>
-    """, unsafe_allow_html=True)
-    if st.button("Launch Executive Dashboard View", key="act_set_user", use_container_width=True):
-        st.session_state["prelogin_role"] = "user"
-        st.session_state["logged_in"] = True
-        st.session_state["user_role"] = "user"
-        st.session_state["active_dataset_scope"] = 1 
-        st.session_state["app_view_state"] = "PORTAL_DASHBOARD"
-        st.session_state["current_page"] = "Dashboard Metrics"
-        st.rerun()
+    with st.form(key="unified_credential_form"):
+        st.markdown('<label class="custom-input-label">User Identifier / Username</label>', unsafe_allow_html=True)
+        user_input = st.text_input("Username", label_visibility="collapsed", placeholder="Enter your ID", key="auth_user")
         
-    st.markdown("<div style='margin-top: 8px;'></div>", unsafe_allow_html=True)
-    
-    a_state = "active" if st.session_state["prelogin_role"] == "admin" else "inactive"
-    st.markdown(f"""
-    <div class="big-role-card {a_state}">
-        <h4 style="margin:0; font-size:17px; color:#FFF; font-weight:600;">🛠️ System Administrator</h4>
-        <p style="margin:4px 0 0 0; font-size:12px; color:rgba(255,255,255,0.75);">Unlock phase workspace switching and UAT control panel.</p>
-    </div>
-    """, unsafe_allow_html=True)
-    if st.button("Select System Admin Mode", key="act_set_admin", use_container_width=True):
-        st.session_state["prelogin_role"] = "admin"
-        st.rerun()
-
-    if st.session_state["prelogin_role"] == "admin":
-        st.markdown("<hr style='border-color: rgba(255,255,255,0.1); margin: 15px 0 15px 0;'>", unsafe_allow_html=True)
-        with st.form(key="admin_credential_lock_form"):
-            st.markdown('<label class="custom-input-label">Admin Username</label>', unsafe_allow_html=True)
-            user = st.text_input("Username", label_visibility="collapsed", placeholder="Enter username", key="adm_user")
-            st.markdown('<label class="custom-input-label">Security Password</label>', unsafe_allow_html=True)
-            pwd = st.text_input("Password", label_visibility="collapsed", type="password", placeholder="Enter password", key="adm_pwd")
-            
-            st.markdown("<div style='margin-top:10px;'></div>", unsafe_allow_html=True)
-            if st.form_submit_button("Log In as Administrator", use_container_width=True):
-                if user == "admin" and pwd == "colgate123":
-                    st.session_state["logged_in"] = True
-                    st.session_state["user_role"] = "admin"
-                    st.session_state["app_view_state"] = "HUB_SCREEN"
-                    st.rerun()
-                else:
-                    st.error("Invalid Administrative Credentials.")
+        st.markdown('<label class="custom-input-label">Security Access Key</label>', unsafe_allow_html=True)
+        pwd_input = st.text_input("Password", label_visibility="collapsed", type="password", placeholder="Enter password", key="auth_pwd")
+        
+        st.markdown("<div style='margin-top:15px;'></div>", unsafe_allow_html=True)
+        if st.form_submit_button("Verify Credentials & Enter", use_container_width=True):
+            # ROUTING LOGIC BY IDENTITY ID
+            if user_input == "admin" and pwd_input == "admin":
+                st.session_state["logged_in"] = True
+                st.session_state["user_role"] = "admin"
+                st.session_state["app_view_state"] = "HUB_SCREEN"  # Sees editable hub
+                st.rerun()
+            elif (user_input == "user" and pwd_input == "user") or (user_input == "user2" and pwd_input == "user2"):
+                st.session_state["logged_in"] = True
+                st.session_state["user_role"] = "user"             # Read-only user assignment
+                st.session_state["active_dataset_scope"] = 1 
+                st.session_state["app_view_state"] = "PORTAL_DASHBOARD"  # Skips editable hub entirely
+                st.session_state["current_page"] = "Dashboard Metrics"
+                st.rerun()
+            else:
+                st.error("Authentication failed. Please verify your identification attributes.")
             
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -385,6 +340,7 @@ else:
 
     st.markdown("<hr style='margin: 8px 0px;'>", unsafe_allow_html=True)
 
+    # Editing Panel is strictly guarded against non-admin roles
     if st.session_state["active_dataset_scope"] == 3 and st.session_state["user_role"] == "admin":
         with st.expander("➕ Register New UAT Defect Entry", expanded=False):
             with st.form("uat_registration_form", clear_on_submit=True):
